@@ -60,15 +60,17 @@ jobs:
         df -hT $PWD
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE
         echo $GITHUB_WORKSPACE
+        ls -l
         
 
     - name: Load custom feeds
       working-directory: /workdir/openwrt
       run: |
         # [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
+        echo $working-directory
         chmod +x $DIY_P1_SH
-        cd openwrt
-        $GITHUB_WORKSPACE/$DIY_P1_SH
+        #cd openwrt
+        $DIY_P1_SH
 
     - name: Update feeds
       run: cd openwrt && ./scripts/feeds update -a
