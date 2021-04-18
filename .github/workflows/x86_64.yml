@@ -58,8 +58,10 @@ jobs:
         cd /workdir
         pwd
         df -hT $PWD
-        ln -sf /workdir/openwrt $GITHUB_WORKSPACE
+        ln -sf  $GITHUB_WORKSPACE /workdir/openwrt
         echo $GITHUB_WORKSPACE
+        cd openwrt
+        pwd
         ls -l
         
 
