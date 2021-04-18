@@ -56,12 +56,14 @@ jobs:
         sudo mkdir -p /workdir
         sudo chown $USER:$GROUPS /workdir
         cd /workdir
+        pwd
         df -hT $PWD
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE
+        echo $GITHUB_WORKSPACE
         
 
     - name: Load custom feeds
-      working-directory: /workdir
+      working-directory: /workdir/openwrt
       run: |
         # [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
         chmod +x $DIY_P1_SH
