@@ -8,7 +8,7 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: Build 841NV10_ATH79_QCA9533 OpenWrt
+name: Build 841NV2_AR71XX_AR9341 OpenWrt
 
 on:
   repository_dispatch:
