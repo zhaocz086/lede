@@ -135,6 +135,161 @@ index 851b7624f..bd8003481 100644
  
  	ath79_gpio_function_disable(AR933X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
  				    AR933X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
+diff --git a/target/linux/ar71xx/files/arch/mips/ath79/mach-tl-wr800n.c b/target/linux/ar71xx/files/arch/mips/ath79/mach-tl-wr800n.c
+new file mode 100644
+index 000000000..00efa9e34
+--- /dev/null
++++ b/target/linux/ar71xx/files/arch/mips/ath79/mach-tl-wr800n.c
+@@ -0,0 +1,149 @@
++/*
++ * TP-LINK TL-WR810N board support
++ *
++ * Copyright (c) 2012 Qualcomm Atheros
++ * Copyright (c) 2012 Gabor Juhos <juhosg@openwrt.org>
++ * Copyright (c) 2016 Jens Steinhauser <jens.steinhauser@gmail.com>
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
++ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
++ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
++ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#include <linux/gpio.h>
++#include <linux/platform_device.h>
++#include <linux/ar8216_platform.h>
++
++#include <asm/mach-ath79/ar71xx_regs.h>
++
++#include "common.h"
++#include "dev-gpio-buttons.h"
++#include "dev-eth.h"
++#include "dev-leds-gpio.h"
++#include "dev-m25p80.h"
++#include "dev-usb.h"
++#include "dev-wmac.h"
++#include "machtypes.h"
++
++#define TL_WR810N_GPIO_SWITCH_B1	0
++#define TL_WR810N_GPIO_SWITCH_B0	1
++#define TL_WR810N_GPIO_USB_POWER	11
++#define TL_WR800N_GPIO_BTN_RESET	12
++#define TL_WR800N_GPIO_LED_SYSTEM	13
++
++#define TL_WR800N_KEYS_POLL_INTERVAL	20 /* msecs */
++#define TL_WR800N_KEYS_DEBOUNCE_INTERVAL (3 * TL_WR800N_KEYS_POLL_INTERVAL)
++
++#define TL_WR800N_WMAC_CALDATA_OFFSET	0x1000
++
++static const char *tl_wr800n_part_probes[] = {
++	"tp-link",
++	NULL,
++};
++
++static struct flash_platform_data tl_wr800n_flash_data = {
++	.part_probes = tl_wr800n_part_probes,
++};
++
++static struct gpio_led tl_wr800n_leds_gpio[] __initdata = {
++	{
++		.name		= "tp-link:blue:system",
++		.gpio		= TL_WR800N_GPIO_LED_SYSTEM,
++		.active_low	= 1,
++	},
++};
++
++static struct gpio_keys_button tl_wr800n_gpio_keys[] __initdata = {
++	{
++		.desc		= "reset",
++		.type		= EV_KEY,
++		.code		= KEY_RESTART,
++		.debounce_interval = TL_WR800N_KEYS_DEBOUNCE_INTERVAL,
++		.gpio		= TL_WR800N_GPIO_BTN_RESET,
++		.active_low	= 1,
++	},
++	{
++		.desc		= "switch_b0",
++		.type		= EV_SW,
++		.code		= BTN_0,
++		.debounce_interval = TL_WR800N_KEYS_DEBOUNCE_INTERVAL,
++		.gpio		= TL_WR800N_GPIO_SWITCH_B0,
++		.active_low	= 0,
++	},
++	{
++		.desc		= "switch_b1",
++		.type		= EV_SW,
++		.code		= BTN_1,
++		.debounce_interval = TL_WR800N_KEYS_DEBOUNCE_INTERVAL,
++		.gpio		= TL_WR800N_GPIO_SWITCH_B1,
++		.active_low	= 0,
++	},
++};
++
++static void __init tl_ap143_setup(int lan_mac_offset)
++{
++	u8 *mac = (u8 *) KSEG1ADDR(0x1f01fc00);
++	u8 *art = (u8 *) KSEG1ADDR(0x1fff0000);
++
++	ath79_register_m25p80(&tl_wr800n_flash_data);
++
++	ath79_setup_ar933x_phy4_switch(false, false);
++
++	ath79_register_mdio(0, 0x0);
++
++	/* WAN */
++	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
++	ath79_eth0_data.duplex = DUPLEX_FULL;
++	ath79_eth0_data.speed = SPEED_100;
++	ath79_eth0_data.phy_mask = BIT(4);
++	ath79_init_mac(ath79_eth0_data.mac_addr, mac, 1);
++	ath79_register_eth(0);
++
++	/* LAN */
++	ath79_switch_data.phy4_mii_en = 1;
++	ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
++	ath79_eth1_data.duplex = DUPLEX_FULL;
++	ath79_eth1_data.speed = SPEED_1000;
++	ath79_switch_data.phy_poll_mask |= BIT(4);
++	ath79_init_mac(ath79_eth1_data.mac_addr, mac, lan_mac_offset);
++	ath79_register_eth(1);
++
++	ath79_register_wmac(art + TL_WR800N_WMAC_CALDATA_OFFSET, mac);
++
++	ath79_register_leds_gpio(-1,
++				 ARRAY_SIZE(tl_wr800n_leds_gpio),
++				 tl_wr800n_leds_gpio);
++	ath79_register_gpio_keys_polled(-1,
++					TL_WR800N_KEYS_POLL_INTERVAL,
++					ARRAY_SIZE(tl_wr800n_gpio_keys),
++					tl_wr800n_gpio_keys);
++}
++
++static void __init tl_wr810n_setup(void)
++{
++	tl_ap143_setup(-1);
++
++	gpio_request_one(TL_WR810N_GPIO_USB_POWER,
++			 GPIOF_OUT_INIT_HIGH | GPIOF_EXPORT_DIR_FIXED,
++			 "USB power");
++	ath79_register_usb();
++}
++
++static void __init tl_wr800n_v2_setup(void)
++{
++	tl_ap143_setup(0);
++}
++
++MIPS_MACHINE(ATH79_MACH_TL_WR800N, "TL-WR800N", "TP-LINK TL-WR800N",
++	     tl_wr800n_setup);
++
++MIPS_MACHINE(ATH79_MACH_TL_WR800N_V2, "TL-WR800N-v2", "TP-LINK TL-WR800N v2",
++	     tl_wr800n_v2_setup);
 diff --git a/target/linux/ar71xx/files/arch/mips/ath79/mach-tl-wr841n-v8.c b/target/linux/ar71xx/files/arch/mips/ath79/mach-tl-wr841n-v8.c
 index 73cfdd9cc..870ed8ff2 100644
 --- a/target/linux/ar71xx/files/arch/mips/ath79/mach-tl-wr841n-v8.c
@@ -316,6 +471,21 @@ index 9f2e680b6..13fa745fa 100644
 +        mtd-cal-data = <&art 0x1000>;
 +        mtd-mac-address = <&uboot 0x1fc00>;
 +};
+diff --git a/target/linux/ath79/dts/qca9533_tplink_tl-wr800n-v2.dts b/target/linux/ath79/dts/qca9533_tplink_tl-wr800n-v2.dts
+new file mode 100644
+index 000000000..8084c1148
+--- /dev/null
++++ b/target/linux/ath79/dts/qca9533_tplink_tl-wr800n-v2.dts
+@@ -0,0 +1,9 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++//add bye zcz
++
++#include "qca953x_tplink_tl-wr800n_16M.dtsi"
++
++/ {
++	compatible = "tplink,tl-wr800n-v2", "qca,qca9533";
++	model = "TP-Link TL-WR800N v2";
++};
 diff --git a/target/linux/ath79/dts/qca9533_tplink_tl-wr841.dtsi b/target/linux/ath79/dts/qca9533_tplink_tl-wr841.dtsi
 index e85f37f42..a43d45d10 100644
 --- a/target/linux/ath79/dts/qca9533_tplink_tl-wr841.dtsi
@@ -336,6 +506,125 @@ index e85f37f42..a43d45d10 100644
  				read-only;
  			};
  		};
+diff --git a/target/linux/ath79/dts/qca953x_tplink_tl-wr800n_16M.dtsi b/target/linux/ath79/dts/qca953x_tplink_tl-wr800n_16M.dtsi
+new file mode 100644
+index 000000000..356598385
+--- /dev/null
++++ b/target/linux/ath79/dts/qca953x_tplink_tl-wr800n_16M.dtsi
+@@ -0,0 +1,113 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++//add bye zcz
++
++#include "qca953x.dtsi"
++
++#include <dt-bindings/gpio/gpio.h>
++#include <dt-bindings/input/input.h>
++
++/ {
++	aliases {
++		led-boot = &led_system;
++		led-failsafe = &led_system;
++		led-running = &led_system;
++		led-upgrade = &led_system;
++		label-mac-device = &eth1;
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		led_system: system {
++			label = "tp-link:blue:system";
++			gpios = <&gpio 13 GPIO_ACTIVE_LOW>;
++		};
++	};
++
++	keys {
++		compatible = "gpio-keys";
++
++		reset {
++			label = "Reset button";
++			linux,code = <KEY_RESTART>;
++			gpios = <&gpio 12 GPIO_ACTIVE_LOW>;
++			debounce-interval = <60>;
++		};
++
++		switch_b0 {
++			label = "switch_b0";
++			linux,input-type = <EV_SW>;
++			linux,code = <BTN_0>;
++			gpios = <&gpio 1 GPIO_ACTIVE_HIGH>;
++			debounce-interval = <60>;
++		};
++
++		switch_b1 {
++			label = "switch_b1";
++			linux,input-type = <EV_SW>;
++			linux,code = <BTN_1>;
++			gpios = <&gpio 0 GPIO_ACTIVE_HIGH>;
++			debounce-interval = <60>;
++		};
++	};
++};
++
++&uart {
++	status = "okay";
++};
++
++&spi {
++	status = "okay";
++
++	num-cs = <1>;
++
++	flash@0 {
++		compatible = "jedec,spi-nor";
++		reg = <0>;
++		spi-max-frequency = <25000000>;
++//reg = <begining end>
++		partitions {
++			compatible = "fixed-partitions";
++			#address-cells = <1>;
++			#size-cells = <1>;
++
++			uboot: partition@0 {
++				label = "u-boot";
++				reg = <0x000000 0x020000>;
++				read-only;
++			};
++
++			partition@20000 {
++				compatible = "tplink,firmware";
++				label = "firmware";
++				reg = <0x020000 0xfd0000>;
++			};
++
++			art: partition@ff0000 {
++				label = "art";
++				reg = <0xff0000 0x010000>;
++				read-only;
++			};
++		};
++	};
++};
++
++&eth0 {
++	status = "okay";
++
++	phy-handle = <&swphy4>;
++
++	mtd-mac-address = <&uboot 0x1fc00>;
++	mtd-mac-address-increment = <1>;
++};
++
++&eth1 {
++	mtd-mac-address = <&uboot 0x1fc00>;
++};
++
++&wmac {
++	status = "okay";
++
++	mtd-cal-data = <&art 0x1000>;
++	mtd-mac-address = <&uboot 0x1fc00>;
++};
 diff --git a/target/linux/ath79/dts/tp9343_tplink_tl-wx.dtsi b/target/linux/ath79/dts/tp9343_tplink_tl-wx.dtsi
 index 30e2cb643..06fe7783e 100644
 --- a/target/linux/ath79/dts/tp9343_tplink_tl-wx.dtsi
