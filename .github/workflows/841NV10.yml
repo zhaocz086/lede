@@ -8,7 +8,7 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: Build X86(64bit) OpenWrt
+name: Build 841NV10_ATH79_QCA9533 OpenWrt
 
 on:
   repository_dispatch:
