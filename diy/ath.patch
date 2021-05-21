@@ -411,7 +411,7 @@ index 000000000..764ad8b34
 + *  TP-LINK TL-WR882N v1 board support
 + *
 + *  Copyright (C) 2016 David Lutz <kpanic@ff3l.net>
-+ * 
++ *
 + *  This program is free software; you can redistribute it and/or modify it
 + *  under the terms of the GNU General Public License version 2 as published
 + *  by the Free Software Foundation.
