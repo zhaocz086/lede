@@ -12,6 +12,8 @@
 
 # Uncomment a feed source
 sed -i 's/^#\(.*helloworld\)/\1/' feeds.conf.default
+git config --global user.email “zhaocz@163.com”
+git config --global user.name “zhaocz”
 
 # Add a feed source
 #sed -i '$a src-git lienol https://github.com/Lienol/openwrt-package' feeds.conf.default
