@@ -24,9 +24,9 @@ env:
   REPO_BRANCH: master
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: diy/config/MIPS/k2.config
-  #EXTRA_FILE: diy/config/MIPS/mips-extra.config
+  EXTRA_FILE: diy/config/MIPS/mips-extra.config
   DIY_P1_SH: diy/diy-part1.sh
-  DIY_P2_SH: diy/diy-part2.sh
+  #DIY_P2_SH: diy/diy-part2.sh
   UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: true
   UPLOAD_COWTRANSFER: true
@@ -72,8 +72,8 @@ jobs:
         [ -e diy/files ] && mv diy/files files
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE .config
         #cat $EXTRA_FILE >> .config
-        chmod +x $DIY_P2_SH
-        $DIY_P2_SH
+        #chmod +x $DIY_P2_SH
+        #$DIY_P2_SH
 
     - name: SSH connection to Actions
       uses: P3TERX/ssh2actions@v1.0.0
