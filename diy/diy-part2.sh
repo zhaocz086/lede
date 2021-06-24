@@ -12,6 +12,4 @@
 
 # Modify default IP
 #sed -i 's/192.168.1.1/192.168.50.5/g' package/base-files/files/bin/config_generate
-git config --global user.email “zhaocz@163.com”
-git config --global user.name “zhaocz”
 git apply diy/ath.patch
